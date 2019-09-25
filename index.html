@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 user-scalable=no,maximum-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>player</title>
+    <link rel="stylesheet" href="./css/index.css">
+    <link rel="stylesheet" href="http://at.alicdn.com/t/font_1415848_1c37rfy7uo3.css">
+</head>
+
+<body>
+    <audio src="" style="display:none" id="audio" preload="auto"></audio>
+    <div class="songList">
+        <div class="songListHeader">
+            <p class="songListName">热歌榜</p>
+        </div>
+        <div class="songListBody">
+            <ul class="songListUL">
+
+            </ul>
+        </div>
+        <div class="songListBottom">
+            <span class="nowPlayingPic">
+                <img src="http://img.xz7.com/up/2018-3/201831142955.png " class="auto-img-pic" id="albumCover">
+            </span>
+            <span class="nowSong">
+                <div class="nowSongdetail">
+                    <span class="nowSongName">QQ音乐</span><span class="cut">/</span><span class="nowSongAr">享你所爱</span>
+                </div>
+                <p class="nowSonglrc"><span class="nowSonglrcDetail">听见心跳的声音</span></p>
+                <div class="nowtimeArea">
+                    <span class="nowtime">00:00</span>/<span class="nowtotaltime">04:36</span>
+                </div>
+            </span>
+            <span class="nowPlayicon">
+                <span class="iconfont icon-bofang nowplay"></span>
+            </span>
+        </div>
+    </div>
+    <div class="like-list-area" id="like-list-area">
+        <div class="like-list-area-header">
+            <span class="iconfont icon-guanbi1 close"></span>
+            <p class="like-list-title"><span class="iconfont icon-xin-1 like-icon"></span>我喜欢</p>
+        </div>
+        <div class="like-list-body">
+            <ul class="like-list-ul">
+
+            </ul>
+        </div>
+
+    </div>
+    <div class="play-area" id="playArea">
+        <div class="cover">
+
+        </div>
+        <div class="header">
+            <span class="iconfont icon-fanhui1-copy back"></span>
+            <span class="songName"><br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer"></span>&nbsp;<span class="iconfont icon-hengxian-"></span></span>
+            <span class="iconfont icon-like  more"></span>
+        </div>
+        <div class="body">
+            <div class="play-area" id="playDist">
+                <div class="playDist"></div>
+                <ul id="lrc">
+
+                </ul>
+            </div>
+        </div>
+        <div class="bottom">
+            <div class="time">
+                <span class="currentTime"></span>
+                <span class="progress">
+                    <span class="layer"></span>
+                    <span class="progress-active"></span>
+                    <span class="mask"></span>
+                </span>
+                <span class="totalTime"></span>
+            </div>
+            <div class="controls">
+                <div class="prev-song">
+                    <span class="iconfont icon-shangyiqu prev"></span>
+                </div>
+                <div class="play-song">
+                    <span class="iconfont icon-bofang play"></span>
+                </div>
+                <div class="next-song">
+                    <span class="iconfont icon-xiayiqu1 next"></span>
+                </div>
+            </div>
+            <div class="other-area">
+                <div class="like-area">
+                    <span class="iconfont icon-heart like"></span>
+                </div>
+                <div class="mode-area">
+                    <span class="iconfont icon-shunxubofang mode"></span>
+                </div>
+                <div class="list-area">
+                    <span class="iconfont icon-bofangliebiao list"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <script src="./js/jquery-3.4.1.min.js"></script>
+    <script src="./js/rem.js"></script>
+    <script>
+        function formatTime(time) {
+            var minutes = Math.floor(time / 60);
+            minutes = minutes >= 10 ? minutes : '0' + minutes;
+
+            var seconds = Math.floor(time % 60);
+            seconds = seconds >= 10 ? seconds : '0' + seconds;
+
+            return minutes + ':' + seconds;
+        }
+        var albumpic = null
+        var url = null
+        var progressWidth = null
+        var maskWidth = null
+        var duration = null
+        var minLeft = 0;
+        var maxLeft = null;
+        var time = []
+        var lrc = []
+        var liHeight = null
+        var playlist = []
+        var urllist = []
+        var index = null
+        var id = null
+        var playmode = 0;
+        var pic = null;
+        var songname = null;
+        var ar = null
+        var fromLike = 0
+        var likelist = JSON.parse(localStorage.getItem("likelist"))
+        likelist = likelist == null ? [] : likelist
+        console.log(likelist)
+
+        //渲染喜欢的列表
+        if (likelist.length != 0) {
+            for (var i = 0; i < likelist.length; i++) {
+                var $li = $(`<li class="songli like-list-li" data-id=${likelist[i].id} data-ar="${likelist[i].ar}" data-name=${likelist[i].name}
+                    data-index=${i} data-pic=${likelist[i].pic}>
+                    <span class="songCover">
+                        <img src="${likelist[i].pic}" alt="" class="auto-img">
+                    </span>
+                    <p class="like-songLiName">
+                        ${likelist[i].name}
+                    </p>
+                    <p class="like-songLiSinger">
+                        ${likelist[i].ar}
+                    </p>
+                    <span class="playing-area1">
+                        <p class="playing-name">正在播放</p>
+                        <img src="https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1569156820710&di=03cd357d1151bfb9c10f3cfdfc2abcb8&imgtype=0&src=http%3A%2F%2Fimg3.duitang.com%2Fuploads%2Fitem%2F201409%2F13%2F20140913100000_S3uER.gif"
+                            class="playing-img" />
+                    </span>
+                </li>`)
+                $(".like-list-ul").append($li)
+            }
+        }
+
+        //获取歌单
+        $.ajax({
+            type: 'get',
+            url: 'http://www.arthurdon.top:3000/top/list?idx=1',
+            success: function (data) {
+                // console.log(data.playlist.tracks)
+                for (var i = 0; i < 40; i++) {
+                    var item = data.playlist.tracks[i]
+                    var o = {}
+                    o.ar = item.ar[0].name
+                    o.name = item.name
+                    o.picUrl = item.al.picUrl
+                    o.id = item.id
+                    playlist.push(o)
+                }
+            },
+            async: false
+        })
+
+        //生成播放列表
+        for (var i = 0; i < playlist.length; i++) {
+            var $li = $(` <li class="songli"  data-id=${playlist[i].id} data-ar="${playlist[i].ar}" data-name=${playlist[i].name} data-index=${i} data-pic=${playlist[i].picUrl}>
+                    <span class="songCover">
+                        <img src="${playlist[i].picUrl}" alt=""
+                            class="auto-img">
+                    </span>
+                    <p class="songLiName">
+                        ${playlist[i].name}
+                    </p>
+                    <p class="songLiSinger">
+                        ${playlist[i].ar}
+                    </p>
+                    <span class="playing-area">
+                        <p class="playing-name">正在播放</p>
+                        <img  src="https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1569156820710&di=03cd357d1151bfb9c10f3cfdfc2abcb8&imgtype=0&src=http%3A%2F%2Fimg3.duitang.com%2Fuploads%2Fitem%2F201409%2F13%2F20140913100000_S3uER.gif" class="playing-img"/>
+                    </span>
+
+                    
+                   
+                </li>`)
+            // console.log($li)
+            $(".songListUL").append($li)
+        }
+
+        //给列表绑定播放事件
+        $(".songListUL").on("click", ".songli", function () {
+            id = $(this).data("id")
+            index = $(this).data("index")
+            pic = $(this).data("pic")
+            songname = $(this).data("name").trim()
+            ar = $(this).data("ar").trim()
+            console.log(id)
+            getalbum(id)
+            getUrl(id)
+            getLyric(id)
+            $(".songList").css({
+                display: "none"
+            })
+            $("#playArea").animate({
+                opacity: 1,
+                zIndex: 1,
+            }, 100)
+            progressWidth = $(".progress").width();
+            maskWidth = $(".mask").width()
+            maxLeft = progressWidth - maskWidth
+            $(".songName").html(`${$(this).data("name")}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${$(this).data("ar")}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+            $(".play").removeClass("icon-bofang")
+            $(".play").addClass("icon-zanting")
+            $(".playDist").addClass("animate")
+            $(".playDist").css({
+                animationPlayState: "running"
+            })
+            $("#playDist").css({
+                display: "block"
+            })
+            $(".playDist").css({
+                display: "block"
+            })
+            $("#lrc").scrollTop(0)
+            $("#albumCover").attr("src", pic)
+            $(".nowPlayingPic").attr("src", albumpic)
+            $(".nowPlayingPic").css({
+                animationPlayState: "running"
+            })
+            $(".nowplay").removeClass("icon-bofang")
+            $(".nowplay").addClass("icon-zanting")
+            $(".nowSongName").text(songname)
+            $(".nowSongAr").text(ar)
+            time = []
+            lrc = []
+            getLyric(id)
+            $(".playing").removeClass("playing")
+            $(this).children().eq(3).addClass("playing");
+
+            for (var i = 0; i < likelist.length; i++) {
+                if (likelist[i].id == id) {
+                    $(".like").removeClass("icon-heart")
+                    $(".like").addClass("icon-xin-1")
+                    return
+                }
+            }
+            if ($(".like").hasClass("icon-xin-1")) {
+                $(".like").removeClass("icon-xin-1")
+                $(".like").addClass("icon-heart")
+            }
+
+
+
+
+
+        })
+
+        //获取当前列表所有播放地址
+        for (var i = 0; i < playlist.length; i++) {
+            // $.ajax({
+            //     type: "get",
+            //     url: "http://www.arthurdon.top:3000/song/url?id=" + playlist[i].id,
+            //     success: function (data) {
+            url = url = 'https://music.163.com/song/media/outer/url?id=' + playlist[i].id,
+                urllist.push(url)
+            //     },
+            //     async: false
+            // })
+        }
+        // console.log(urllist)
+
+        //获取封面
+        function getalbum(id) {
+            $.ajax({
+                type: "get",
+                url: "http://www.arthurdon.top:3000/song/detail?ids=" + id,
+                success: function (data) {
+                    albumpic = data.songs[0].al.picUrl
+                    $(".playDist").css({
+                        background: `url(${albumpic})`,
+                        backgroundSize: "cover"
+                    })
+                }
+            })
+        }
+        //获取播放地址
+        function getUrl(id) {
+            // $.ajax({
+            //     type: "get",
+            //     url: "http://www.arthurdon.top:3000/song/url?id=" + id,
+            //     success: function (data) {
+            // url = data.data[0].url
+            url = 'https://music.163.com/song/media/outer/url?id=' + id
+            $("#audio").attr("src", url)
+            $("#audio").data("index", index)
+            //     }
+            // })
+        }
+        //获取歌词
+        function getLyric(id) {
+            console.log(1)
+            console.log(id)
+            $.ajax({
+                type: 'get',
+                url: 'http://www.arthurdon.top:3000/lyric?id=' + id,
+                async: false,
+                success: function (data) {
+
+                    $("#lrc").empty();
+                    console.log($("#lrc").scrollTop())
+                    // console.log(data)    
+                    var txt = data.lrc.lyric
+                    console.log(txt)
+                    txt1 = txt.split(/\n/)
+                    // console.log(txt1)
+                    for (var i = 0; i < txt1.length; i++) {
+                        time[i] = parseFloat(txt1[i].substr(1, 3)) * 60 + parseFloat(txt1[i].substring(4, 10))
+                    }
+                    txt = txt.split(/\[|\]/)
+                    for (var i = 2; i < txt.length - 2;) {
+                        lrc.push(txt[i])
+                        i = i + 2
+                    }
+                    // console.log(lrc)
+                    for (var i = 0; i < lrc.length; i++) {
+                        if (lrc[i] == '\n') {
+                            console.log(1)
+                        }
+                        if (lrc[i] != "\n") {
+                            var $li = $(`<li class="lyricLi">${lrc[i]}</li>`)
+                            $("#lrc").append($li)
+
+                        }
+                        if (lrc[i] == '\n') {
+                            time.splice(i, 1)
+                            lrc.splice(i, 1)
+                            continue;
+                            // time.splice(i, 1)
+                        }
+
+                    }
+                    console.log(time)
+                }
+            })
+
+
+        }
+
+
+
+
+        //当可以播放时
+        $("#audio")[0].oncanplay = function () {
+            $(this)[0].play()
+            duration = this.duration;
+            $(".nowtimeArea").css({
+                display: "block"
+            })
+            $('.totalTime').text(formatTime(duration))
+            $(".nowtotaltime").text(formatTime(duration))
+        }
+
+        //点击播放事件
+        $(".play").on("click", function () {
+
+            if ($(this).hasClass("icon-bofang")) {
+                $("#audio")[0].play();
+                $(this).removeClass("icon-bofang")
+                $(this).addClass("icon-zanting")
+                $(".playDist").addClass("animate")
+                $(".playDist").css({
+                    animationPlayState: "running"
+                })
+            }
+            else {
+                $("#audio")[0].pause();
+                $(this).removeClass("icon-zanting")
+                $(this).addClass("icon-bofang")
+                $(".playDist").css({
+                    animationPlayState: "paused"
+                })
+                $(".nowPlayingPic").css({
+                    animationPlayState: "paused"
+                })
+                $(".nowplay").removeClass("icon-zanting")
+                $(".nowplay").addClass("icon-bofang")
+            }
+        })
+
+
+        //实时播放事件
+        $("#audio")[0].ontimeupdate = function () {
+            var currentTime = this.currentTime
+            // console.log(currentTime)
+            var percent = currentTime / duration;
+            // console.log(percent)
+            var width = percent * progressWidth;
+            // console.log(progressWidth)
+            // console.log(width)
+            currentLine = 0;
+            // console.log(width)
+
+            width = width >= maxLeft ? maxLeft : width <= minLeft ? minLeft : width;
+            $(".progress-active").css({
+                width: width + maskWidth / 2
+            })
+            $(".mask").css({
+                left: width
+            })
+            $(".currentTime").text(formatTime(currentTime))
+            $(".nowtime").text(formatTime(currentTime))
+            // console.log(currentLine)
+            // console.log(time)
+            for (j = currentLine, len = time.length; j < len; j++) {
+                if (currentTime < time[j + 1] && currentTime > time[j]) {
+                    // console.log(currentTime, time[j], time[j + 1])
+                    currentLine = j
+                    $(".active").removeClass("active")
+                    liHeight = $(".lyricLi").height()
+                    $($(".lyricLi")[currentLine]).addClass("active")
+                    var text = $(".lyricLi")[currentLine].innerText.trim()
+                    // console.log(text)
+                    $(".nowSonglrcDetail").text(text)
+                    if ($(".active").offset().top > $("#lrc").height() * 0.7) {
+                        var top = currentLine * liHeight * 2
+                        // console.log(top)
+                        // $("#lrc").scrollTop(top)
+                        $("#lrc").animate({
+                            scrollTop: top
+                        }, 800)
+                    }
+
+
+
+                }
+            }
+        }
+
+        //滑动条点击事件
+        $(".layer").on("touchstart", function (e) {
+            // console.log(e)
+            var x = e.targetTouches[0].pageX
+            var offsetLeft = $(this).offset().left
+            var left = x - offsetLeft - maskWidth / 2
+            left = left >= maxLeft ? maxLeft : left <= minLeft ? minLeft : left;
+            //  
+            $(".mask").css({
+                left: left
+            })
+            //激活进度条的宽度
+            var w = x - offsetLeft;
+            // console.log(w)
+            w = w >= progressWidth ? progressWidth : w <= 0 ? 0 : w;
+            $('.progress-active').css({
+                width: w + 'px'
+            })
+            $("#audio")[0].currentTime = (left / progressWidth) * duration
+        })
+
+
+        $('.layer').on("touchmove", function (e) {
+            $("#audio")[0].pause()
+            var x = e.targetTouches[0].pageX;
+            //获取当前元素距离屏幕最左端的距离
+            var offsetLeft = $(this).offset().left;
+            // console.log('offsetLeft ==> ', offsetLeft);
+
+            var left = x - offsetLeft - maskWidth / 2;
+
+            left = left >= maxLeft ? maxLeft : left <= minLeft ? minLeft : left;
+            console.log(left)
+            $("#audio")[0].currentTime = (left / progressWidth) * duration
+            $(".mask").css({
+                left: left + 'px'
+            }).delay(500)
+
+            //激活进度条的宽度
+            var w = x - offsetLeft;
+            // console.log(w)
+            w = w >= progressWidth ? progressWidth : w <= 0 ? 0 : w;
+            $('.progress-active').css({
+                width: w + 'px'
+            })
+        })
+        $(".layer").on("touchend", function (e) {
+            $("#audio")[0].play()
+            //    $("#audio")[0].play();
+            $(".play").removeClass("icon-bofang")
+            $(".play").addClass("icon-zanting")
+            $(".playDist").addClass("animate")
+            $(".playDist").css({
+                animationPlayState: "running"
+            })
+        })
+        //播放结束时
+        $("#audio")[0].onended = function () {
+            // $(".playDist").css({
+            //     animationPlayState: "paused"
+            // })
+            // $(".play").removeClass("icon-zanting")
+            // $(".play").addClass("icon-bofang")
+            if ($(".mode").hasClass("icon-shunxubofang")) {
+                var index = $("#audio").data("index")
+                // var ar=$("#")
+                if (index != playlist.length - 1) {
+                    index = index + 1
+                }
+                else {
+                    index = 0
+                }
+
+                $("#audio").attr("src", urllist[index])
+                $(".songName").html(`${playlist[index].name}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${playlist[index].ar}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+                $(".playDist").css({
+                    background: `url(${playlist[index].picUrl})`,
+                    backgroundSize: "cover"
+                })
+                id = playlist[index].id
+                $("#lrc").empty()
+                $("#lrc").stop(true, true).animate({
+                    scrollTop: '0px'
+                })
+                time = []
+                lrc = []
+                console.log(id)
+                getLyric(id)
+                $("#audio").data("index", index)
+                $("#audio")[0].play()
+                $(".play").removeClass("icon-bofang")
+                $(".play").addClass("icon-zanting")
+                $(".playDist").addClass("animate")
+                $(".playDist").css({
+                    animationPlayState: "running"
+                })
+                // getalbum(id)
+                $("#albumCover").attr("src", `${playlist[index].picUrl}`)
+                $(".nowSongName").text(playlist[index].name)
+                $(".nowSongAr").text(playlist[index].ar)
+            }
+
+            //如果当前是随机播放
+            if ($(".mode").hasClass("icon-suijibofang")) {
+                var index = parseInt(Math.random() * (playlist.length - 1 - 0 + 1) + 0, 10)
+                while (index == $("#audio").data("index")) {
+                    index = parseInt(Math.random() * (playlist.length - 1 - 0 + 1) + 0, 10)
+                }
+                $("#audio").attr("src", urllist[index])
+                $(".songName").html(`${playlist[index].name}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${playlist[index].ar}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+                $(".playDist").css({
+                    background: `url(${playlist[index].picUrl})`,
+                    backgroundSize: "cover"
+                })
+                id = playlist[index].id
+                $("#lrc").empty()
+                $("#lrc").stop(true, true).animate({
+                    scrollTop: '0px'
+                })
+                time = []
+                lrc = []
+                console.log(id)
+                getLyric(id)
+                $("#audio").data("index", index)
+                $("#audio")[0].play()
+                $(".play").removeClass("icon-bofang")
+                $(".play").addClass("icon-zanting")
+                $(".playDist").addClass("animate")
+                $(".playDist").css({
+                    animationPlayState: "running"
+                })
+
+                $("#albumCover").attr("src", `${playlist[index].picUrl}`)
+                $(".nowSongName").text(playlist[index].name)
+                $(".nowSongAr").text(playlist[index].ar)
+            }
+
+            //如果当前是单曲循环
+            if ($(".mode").hasClass("icon-danquxunhuan")) {
+                $("#audio")[0].currentTime = 0;
+                $("#lrc").stop(true, true).animate({
+                    scrollTop: '0px'
+                })
+            }
+
+        }
+
+
+        //唱片点击事件
+        $(".playDist").on("touchstart", function () {
+            $(this).css({
+                display: "none"
+            }).delay(300)
+            $("#lrc").stop(true, true).animate({
+                opacity: "1",
+                zIndex: 1
+            }, 300)
+        })
+        //切换播放模式事件
+        $(".mode").on("click", function () {
+            if (playmode == 0) {
+                $(".mode").removeClass("icon-shunxubofang")
+                $(".mode").addClass("icon-suijibofang")
+                playmode = 1
+                if ($("#audio").attr("loop")) {
+                    $("#audio").attr("loop", false)
+                }
+                return
+            }
+            if (playmode == 1) {
+                $(".mode").removeClass("icon-suijibofang")
+                $(".mode").addClass("icon-danquxunhuan")
+                playmode = 2
+                if ($("#audio").attr("loop")) {
+                    $("#audio").attr("loop", false)
+                }
+                return
+            }
+            if (playmode == 2) {
+                $(".mode").removeClass("icon-danquxunhuan")
+                $(".mode").addClass("icon-shunxubofang")
+                playmode = 0
+                $("#audio").attr("loop", true)
+                return
+            }
+        })
+
+        //歌词点击事件
+        $("#lrc").on("touchstart", function () {
+            $(this).stop(true, true).animate({
+                opacity: "0"
+            }, 100)
+            $(".playDist").css({
+                display: "block"
+            }).delay(100)
+        })
+        //返回箭头点击事件
+        $(".back").on("click", function () {
+            $(".songList").css({
+                display: "block",
+                zIndex: 2
+            })
+            $("#playArea").css({
+                opacity: 0,
+                // zIndex: 2
+            })
+            // $("#lrc").empty();
+            $("#lrc").css({
+                opacity: 0,
+                zIndex: -1
+            })
+            $("#playDist").css({
+                display: "block"
+            })
+
+        })
+
+        //点击下一曲事件
+        $(".next").on("click", function () {
+            //如果当前是顺序播放
+            if ($(".mode").hasClass("icon-shunxubofang")) {
+                if (fromLike == 0) {
+                    var index = $("#audio").data("index")
+
+                    if (index != playlist.length - 1) {
+                        index = index + 1
+                    }
+                    else {
+                        index = 0
+                    }
+
+                    $("#audio").attr("src", urllist[index])
+                    $(".songName").html(`${playlist[index].name}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${playlist[index].ar}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+                    $(".playDist").css({
+                        background: `url(${playlist[index].picUrl})`,
+                        backgroundSize: "cover"
+                    })
+                    id = playlist[index].id
+                    $("#lrc").empty()
+                    time = []
+                    lrc = []
+                    console.log(id)
+                    getLyric(id)
+                    $("#audio").data("index", index)
+                    $("#audio")[0].play()
+                    $(".play").removeClass("icon-bofang")
+                    $(".play").addClass("icon-zanting")
+                    $(".playDist").addClass("animate")
+                    $(".playDist").css({
+                        animationPlayState: "running"
+                    })
+                    // getalbum(id)
+                    $("#albumCover").attr("src", `${playlist[index].picUrl}`)
+                    $(".nowSongName").text(playlist[index].name)
+                    $(".nowSongAr").text(playlist[index].ar)
+                }
+                else {
+                    index = $("#audio").data("index")
+                    if (index != playlist.length - 1) {
+                        index = index + 1
+                    }
+                    else {
+                        index = 0
+                    }
+                    // console.log(index)
+                    console.log(playlist[index])
+                    $("#audio").attr("src", "https://music.163.com/song/media/outer/url?id=" + playlist[index].id)
+                    $(".songName").html(`${playlist[index].name}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${playlist[index].ar}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+                    $(".playDist").css({
+                        background: `url(${playlist[index].picUrl})`,
+                        backgroundSize: "cover"
+                    })
+                    id = playlist[index].id
+                    $("#lrc").empty()
+                    time = []
+                    lrc = []
+                    console.log(id)
+                    getLyric(id)
+                    $("#audio").data("index", index)
+                    $("#audio")[0].play()
+                    $(".play").removeClass("icon-bofang")
+                    $(".play").addClass("icon-zanting")
+                    $(".playDist").addClass("animate")
+                    $(".playDist").css({
+                        animationPlayState: "running"
+                    })
+                    // getalbum(id)
+                    $("#albumCover").attr("src", `${playlist[index].picUrl}`)
+                    $(".nowSongName").text(playlist[index].name)
+                    $(".nowSongAr").text(playlist[index].ar)
+                }
+            }
+
+            //如果当前是随机播放
+            if ($(".mode").hasClass("icon-suijibofang")) {
+                var index = parseInt(Math.random() * (playlist.length - 1 - 0 + 1) + 0, 10)
+                while (index == $("#audio").data("index")) {
+                    index = parseInt(Math.random() * (playlist.length - 1 - 0 + 1) + 0, 10)
+                }
+                $("#audio").attr("src", urllist[index])
+                $(".songName").html(`${playlist[index].name}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${playlist[index].ar}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+                $(".playDist").css({
+                    background: `url(${playlist[index].picUrl})`,
+                    backgroundSize: "cover"
+                })
+                id = playlist[index].id
+                $("#lrc").empty()
+                time = []
+                lrc = []
+                console.log(id)
+                getLyric(id)
+                $("#audio").data("index", index)
+                $("#audio")[0].play()
+                $(".play").removeClass("icon-bofang")
+                $(".play").addClass("icon-zanting")
+                $(".playDist").addClass("animate")
+                $(".playDist").css({
+                    animationPlayState: "running"
+                })
+
+                $("#albumCover").attr("src", `${playlist[index].picUrl}`)
+                $(".nowSongName").text(playlist[index].name)
+                $(".nowSongAr").text(playlist[index].ar)
+            }
+
+            //如果当前是单曲循环
+            if ($(".mode").hasClass("icon-danquxunhuan")) {
+                $("#audio")[0].currentTime = 0;
+                $("#lrc").stop(true, true).animate({
+                    scrollTop: '0px'
+                })
+            }
+
+        })
+
+        //点击上一曲事件
+        $(".prev").on("click", function () {
+            if ($(".mode").hasClass("icon-shunxubofang")) {
+                var index = $("#audio").data("index")
+                if (index != 0) {
+                    index = index - 1
+                }
+                else {
+                    index = playlist.length - 1
+                }
+
+                $("#audio").attr("src", urllist[index])
+                $(".songName").html(`${playlist[index].name}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${playlist[index].ar}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+                $(".playDist").css({
+                    background: `url(${playlist[index].picUrl})`,
+                    backgroundSize: "cover"
+                })
+                id = playlist[index].id
+                $("#lrc").empty()
+                time = []
+                lrc = []
+                console.log(id)
+                getLyric(id)
+                $("#audio").data("index", index)
+                $("#audio")[0].play()
+                $(".play").removeClass("icon-bofang")
+                $(".play").addClass("icon-zanting")
+                $(".playDist").addClass("animate")
+                $(".playDist").css({
+                    animationPlayState: "running"
+                })
+                $("#albumCover").attr("src", `${playlist[index].picUrl}`)
+                $(".nowSongName").text(playlist[index].name)
+                $(".nowSongAr").text(playlist[index].ar)
+            }
+            //如果当前是随机播放
+            if ($(".mode").hasClass("icon-suijibofang")) {
+                var index = parseInt(Math.random() * (playlist.length - 1 - 0 + 1) + 0, 10)
+                while (index == $("#audio").data("index")) {
+                    index = parseInt(Math.random() * (playlist.length - 1 - 0 + 1) + 0, 10)
+                }
+                $("#audio").attr("src", urllist[index])
+                $(".songName").html(`${playlist[index].name}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${playlist[index].ar}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+                $(".playDist").css({
+                    background: `url(${playlist[index].picUrl})`,
+                    backgroundSize: "cover"
+                })
+                id = playlist[index].id
+                $("#lrc").empty()
+                time = []
+                lrc = []
+                console.log(id)
+                getLyric(id)
+                $("#audio").data("index", index)
+                $("#audio")[0].play()
+                $(".play").removeClass("icon-bofang")
+                $(".play").addClass("icon-zanting")
+                $(".playDist").addClass("animate")
+                $(".playDist").css({
+                    animationPlayState: "running"
+                })
+
+                $("#albumCover").attr("src", `${playlist[index].picUrl}`)
+            }
+
+            //如果当前是单曲循环
+            if ($(".mode").hasClass("icon-danquxunhuan")) {
+                $("#audio")[0].currentTime = 0;
+                $("#lrc").stop(true, true).animate({
+                    scrollTop: '0px'
+                })
+            }
+            if ($(".mode").hasClass("icon-suijibofang")) {
+                var index = parseInt(Math.random() * (playlist.length - 1 - 0 + 1) + 0, 10)
+                while (index == $("#audio").data("index")) {
+                    index = parseInt(Math.random() * (playlist.length - 1 - 0 + 1) + 0, 10)
+                }
+                $("#audio").attr("src", urllist[index])
+                $(".songName").html(`${playlist[index].name}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${playlist[index].ar}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+                $(".playDist").css({
+                    background: `url(${playlist[index].picUrl})`,
+                    backgroundSize: "cover"
+                })
+                id = playlist[index].id
+                $("#lrc").empty()
+                time = []
+                lrc = []
+                console.log(id)
+                getLyric(id)
+                $("#audio").data("index", index)
+                $("#audio")[0].play()
+                $(".play").removeClass("icon-bofang")
+                $(".play").addClass("icon-zanting")
+                $(".playDist").addClass("animate")
+                $(".playDist").css({
+                    animationPlayState: "running"
+                })
+
+                $("#albumCover").attr("src", `${playlist[index].picUrl}`)
+                $(".nowSongName").text(playlist[index].name)
+                $(".nowSongAr").text(playlist[index].ar)
+            }
+
+            //如果当前是单曲循环
+            if ($(".mode").hasClass("icon-danquxunhuan")) {
+                $("#audio")[0].currentTime = 0;
+                $("#lrc").stop(true, true).animate({
+                    scrollTop: '0px'
+                })
+            }
+
+
+        })
+
+        //点击主页的旋转碟片
+        $(".nowPlayingPic").on("click", function () {
+            time = []
+            lrc = []
+            $(".songList").css({
+                display: "none",
+                zIndex: -1
+            })
+            $("#playArea").css({
+                display: "block",
+                opacity: 1
+            })
+            $("#playDist").css({
+                display: "block"
+            })
+            $(".playDist").css({
+                display: "block"
+            })
+            getLyric(id)
+
+
+
+        })
+
+        //喜欢按钮触发的事件
+        $(".like").on("click", function () {
+            if ($(".like").hasClass("icon-xin-1")) {
+
+                for (var i = 0; i < likelist.length; i++) {
+                    if (id == likelist[i].id) {
+                        likelist.splice(i, 1)
+                        // console.log(likelist)
+                        localStorage.setItem("likelist", JSON.stringify(likelist))
+
+                        $(this).removeClass("icon-xin-1")
+                        $(this).addClass("icon-heart")
+                        $(".like-list-ul").empty();
+                        for (var i = 0; i < likelist.length; i++) {
+                            var $li = $(`<li class="songli like-list-li" data-id=${likelist[i].id} data-ar="${likelist[i].ar}" data-name=${likelist[i].name}
+                    data-index=${i} data-pic=${likelist[i].pic}>
+                    <span class="songCover">
+                        <img src="${likelist[i].pic}" alt="" class="auto-img">
+                    </span>
+                    <p class="like-songLiName">
+                        ${likelist[i].name}
+                    </p>
+                    <p class="like-songLiSinger">
+                        ${likelist[i].ar}
+                    </p>
+                    <span class="playing-area1">
+                        <p class="playing-name">正在播放</p>
+                        <img src="https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1569156820710&di=03cd357d1151bfb9c10f3cfdfc2abcb8&imgtype=0&src=http%3A%2F%2Fimg3.duitang.com%2Fuploads%2Fitem%2F201409%2F13%2F20140913100000_S3uER.gif"
+                            class="playing-img" />
+                    </span>
+                </li>`)
+                            $(".like-list-ul").append($li)
+                        }
+
+                        return
+                    }
+                }
+
+            }
+            else {
+                var o = {}
+                o.id = id;
+                o.name = songname;
+                o.ar = ar;
+                o.pic = pic
+                // for (var i = 0; i < likelist.length; i++) {
+                //     if (o.id == likelist[i].id) {
+                //         return
+                //     }
+                // }
+                $(this).removeClass("icon-heart")
+                $(this).addClass("icon-xin-1")
+                likelist.push(o)
+                localStorage.setItem("likelist", JSON.stringify(likelist))
+
+                $(".like-list-ul").empty();
+                for (var i = 0; i < likelist.length; i++) {
+                    var $li = $(`<li class="songli like-list-li" data-id=${likelist[i].id} data-ar="${likelist[i].ar}" data-name=${likelist[i].name}
+                    data-index=${i} data-pic=${likelist[i].pic}>
+                    <span class="songCover">
+                        <img src="${likelist[i].pic}" alt="" class="auto-img">
+                    </span>
+                    <p class="like-songLiName">
+                        ${likelist[i].name}
+                    </p>
+                    <p class="like-songLiSinger">
+                        ${likelist[i].ar}
+                    </p>
+                    <span class="playing-area1">
+                        <p class="playing-name">正在播放</p>
+                        <img src="https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1569156820710&di=03cd357d1151bfb9c10f3cfdfc2abcb8&imgtype=0&src=http%3A%2F%2Fimg3.duitang.com%2Fuploads%2Fitem%2F201409%2F13%2F20140913100000_S3uER.gif"
+                            class="playing-img" />
+                    </span>
+                </li>`)
+                    $(".like-list-ul").append($li)
+                }
+
+
+
+            }
+
+        })
+
+
+        //主页，暂停事件
+        $(".nowplay").on("click", function () {
+            if ($(this).hasClass("icon-zanting")) {
+                $(this).removeClass("icon-zanting")
+                $(this).addClass("icon-bofang")
+                $("#audio")[0].pause();
+                $(".playDist").css({
+                    animationPlayState: "paused"
+                })
+                $(".nowPlayingPic").css({
+                    animationPlayState: "paused"
+                })
+                return
+            }
+            if ($(this).hasClass("icon-bofang")) {
+                $(this).removeClass("icon-bofang")
+                $(this).addClass("icon-zanting")
+                $("#audio")[0].play()
+                $(".playDist").css({
+                    animationPlayState: "running"
+                })
+                $(".nowPlayingPic").css({
+                    animationPlayState: "running"
+                })
+                $(".play").removeClass("icon-bofang")
+                $(".play").addClass("icon-zanting")
+                return
+            }
+
+
+        })
+        //喜欢列表按钮的点击事件
+        $(".more").on("click", function () {
+            // $(".like-list-area").css({
+            //     display: "block"
+            // })
+            $(".like-list-area").animate({
+                width: "100%",
+                height: "102%",
+            }, function () {
+                $(".like-list-area").slideDown();
+            })
+
+        })
+
+        //关闭喜欢列表
+        $(".close").on("click", function () {
+            $(".like-list-area").animate({
+                width: "0%",
+                height: "0%"
+            }, function () {
+                $(".like-list-area").css({
+                    display: "none"
+                })
+            })
+
+        })
+
+
+        //播放喜欢列表的歌曲
+        $(".like-list-ul").on("click", "li", function () {
+            fromLike = 1;
+            console.log(playlist)
+            console.log(likelist)
+            playlist = likelist
+            id = $(this).data("id")
+            index = $(this).data("index")
+            console.log("index", index)
+            pic = $(this).data("pic")
+            songname = $(this).data("name").trim()
+            ar = $(this).data("ar").trim()
+            console.log(id)
+            getalbum(id)
+            getUrl(id)
+            getLyric(id)
+            $(".songList").css({
+                display: "none"
+            })
+            $("#playArea").animate({
+                opacity: 1,
+                zIndex: 1,
+            }, 100)
+            progressWidth = $(".progress").width();
+            maskWidth = $(".mask").width()
+            maxLeft = progressWidth - maskWidth
+            $(".songName").html(`${$(this).data("name")}<br><span class="iconfont icon-hengxian-">&nbsp;</span><span
+                    class="singer">${$(this).data("ar")}</span>&nbsp;<span class="iconfont icon-hengxian-"></span>`)
+
+            $(".play").removeClass("icon-bofang")
+            $(".play").addClass("icon-zanting")
+            $(".playDist").addClass("animate")
+            $(".playDist").css({
+                animationPlayState: "running"
+            })
+            $("#playDist").css({
+                display: "block"
+            })
+            $(".playDist").css({
+                display: "block"
+            })
+            $("#lrc").scrollTop(0)
+            $("#albumCover").attr("src", pic)
+            $(".nowPlayingPic").attr("src", albumpic)
+            $(".nowPlayingPic").css({
+                animationPlayState: "running"
+            })
+            $(".nowplay").removeClass("icon-bofang")
+            $(".nowplay").addClass("icon-zanting")
+            $(".nowSongName").text(songname)
+            $(".nowSongAr").text(ar)
+            time = []
+            lrc = []
+            getLyric(id)
+            $(".playing").removeClass("playing")
+            $(this).children().eq(3).addClass("playing");
+
+            for (var i = 0; i < likelist.length; i++) {
+                if (likelist[i].id == id) {
+                    $(".like").removeClass("icon-heart")
+                    $(".like").addClass("icon-xin-1")
+                    return
+                }
+            }
+            if ($(".like").hasClass("icon-xin-1")) {
+                $(".like").removeClass("icon-xin-1")
+                $(".like").addClass("icon-heart")
+            }
+        })
+
+
+    </script>
+    <script>
+
+    </script>
+
+</body>
+
+</html>
